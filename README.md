@@ -1,3 +1,9 @@
+# Warning
+
+I have forked original project from nicholaskajoh to try some enhancement.
+All modifications I will made will be done to meet my personal need and not intended for general use. Nevertheless you can use this software or part of it if you find it useful (at your own risk!)
+Following is the original README from nicholaskajoh.
+
 # Ivy
 Ivy is an open-source video-based object counting software for tallying pretty much anything (vehicles, people, animals — you name it).
 

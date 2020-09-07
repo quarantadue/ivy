@@ -56,7 +56,8 @@ def init_logger():
         file_path = os.path.join(log_files_directory, job_id + '.log')
         file_handler = logging.FileHandler(file_path)
         file_handler.setLevel(logging.DEBUG)
-        file_formatter = CustomJsonFormatter('(created) (logger) (level) (message)')
+        #file_formatter = CustomJsonFormatter('(created) (logger) (level) (message)')
+        file_formatter = CustomJsonFormatter()
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
 

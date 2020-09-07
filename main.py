@@ -8,8 +8,15 @@ import sys
 import time
 import cv2
 
+# the way parameters are loaded and parsed looks unnecessary complex
+# maybe I will mostly rewrite it if an when i will have the time and will to do it
+# for now, I just need to be able to specify a config file 
+import argparse
+parser = argparse.ArgumentParser(description='Count vehicles in videos')
+parser.add_argument('cfgfile', nargs='?',default='.env',help='configuration file')
+args=parser.parse_args()
 from dotenv import load_dotenv
-load_dotenv()
+load_dotenv(args.cfgfile)
 
 import settings
 from util.logger import init_logger
