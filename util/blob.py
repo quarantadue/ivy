@@ -16,8 +16,10 @@ class Blob:
         self.num_consecutive_detection_failures = 0
         self.lines_crossed = [] # list of counting lines crossed by an object
         self.position_first_detected = tuple(self.centroid)
+        self.old_bounding_box=None
 
     def update(self, _bounding_box, _type=None, _confidence=None, _tracker=None):
+        self.old_bounding_box=self.bounding_box
         self.bounding_box = _bounding_box
         self.type = _type if _type is not None else self.type
         self.type_confidence = _confidence if _confidence is not None else self.type_confidence
