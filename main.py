@@ -14,6 +14,7 @@ import cv2
 import argparse
 parser = argparse.ArgumentParser(description='Count vehicles in videos')
 parser.add_argument('cfgfile', nargs='?',default='.env',help='configuration file')
+parser.add_argument('-v',default=None,help='video file, overrides what is set in config file',dest='video')
 args=parser.parse_args()
 from dotenv import load_dotenv
 load_dotenv(args.cfgfile)
@@ -27,6 +28,9 @@ from ObjectCounter import ObjectCounter
 
 init_logger()
 logger = get_logger()
+
+if args.video is not None:
+	settings.VIDEO=args.video	
 
 
 def run():

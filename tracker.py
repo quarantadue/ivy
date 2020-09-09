@@ -55,38 +55,52 @@ def _remove_stray_blobs(blobs, matched_blob_ids, mcdf):
 			del blobs[blob_id]
 	return blobs
 
+def _match_boxes_simple(boxes,classes, confidences, blobs):
+	'''
+	old algorithm used to match boxes with blobs
+	I'm keep it so I can compare results
+	'''
+	# Note: in this algorithm multiple boxes can match the same blob
+	matches=[]
+	for i, box in enumerate(boxes):
+		for _id, blob in blobs.items():
+			if get_overlap(box, blob.bounding_box) >= 0.6:
+				matches.append((i,_id))
+	return matches
+	
+
 def add_new_blobs(boxes, classes, confidences, blobs, frame, tracker, mcdf):
 	'''
 	Add new blobs or updates existing ones.
 	'''
-	matched_blob_ids = []
+	matches=_match_boxes_simple(boxes,classes, confidences, blobs)
+	box2blob_matches={m[0]:m[1] for m in matches}
+	#box2blob_matches={m[1]:m[0] for m in matches} 
+	matched_blob_ids = set([m[1] for m in matches])
 	for i, box in enumerate(boxes):
 		_type = classes[i] if classes is not None else None
 		_confidence = confidences[i] if confidences is not None else None
 		_tracker = get_tracker(tracker, box, frame)
 
-		match_found = False
-		for _id, blob in blobs.items():
-			if get_overlap(box, blob.bounding_box) >= 0.6:
-				match_found = True
-				if _id not in matched_blob_ids:
-					blob.num_consecutive_detection_failures = 0
-					matched_blob_ids.append(_id)
-				blob.update(box, _type, _confidence, _tracker)
+		if i in box2blob_matches: # or use try catch?
+			_id=box2blob_matches[i]
+			blob=blobs[_id]
+			blob.num_consecutive_detection_failures = 0
+			
+			blob.update(box, _type, _confidence, _tracker)
 
-				blob_update_log_meta = {
-					'label': 'BLOB_UPDATE',
-					'object_id': _id,
-					'bounding_box': blob.bounding_box,
-					'type': blob.type,
-					'type_confidence': blob.type_confidence,
-				}
-				if settings.LOG_IMAGES:
-					blob_update_log_meta['image'] = get_base64_image(get_box_image(frame, blob.bounding_box))
-				logger.debug('Blob updated.', extra={'meta': blob_update_log_meta})
-				break
+			blob_update_log_meta = {
+				'label': 'BLOB_UPDATE',
+				'object_id': _id,
+				'bounding_box': blob.bounding_box,
+				'type': blob.type,
+				'type_confidence': blob.type_confidence,
+			}
+			if settings.LOG_IMAGES:
+				blob_update_log_meta['image'] = get_base64_image(get_box_image(frame, blob.bounding_box))
+			logger.debug('Blob updated.', extra={'meta': blob_update_log_meta})
 
-		if not match_found:
+		else: # not match_found for this box
 			_blob = Blob(box, _type, _confidence, _tracker)
 			blob_id = generate_object_id()
 			blobs[blob_id] = _blob
