@@ -19,7 +19,7 @@ class Blob:
         self.old_bounding_box=None
 
     def update(self, _bounding_box, _type=None, _confidence=None, _tracker=None):
-        self.old_bounding_box=self.bounding_box
+        #self.old_bounding_box=self.bounding_box
         self.bounding_box = _bounding_box
         self.type = _type if _type is not None else self.type
         self.type_confidence = _confidence if _confidence is not None else self.type_confidence

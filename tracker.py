@@ -6,7 +6,7 @@ import sys
 import cv2
 import settings
 from util.blob import Blob
-from util.bounding_box import get_overlap, get_box_image
+from util.bounding_box import get_overlap, get_overlap2, get_box_image
 from util.image import get_base64_image
 from util.object_info import generate_object_id
 from util.logger import get_logger
@@ -67,13 +67,39 @@ def _match_boxes_simple(boxes,classes, confidences, blobs):
 			if get_overlap(box, blob.bounding_box) >= 0.6:
 				matches.append((i,_id))
 	return matches
-	
+
+def _match_boxes_new(boxes,classes, confidences, blobs):
+	'''
+	match boxes with existing blobs
+	'''
+	scores=[]
+	for i, box in enumerate(boxes):
+		for _id, blob in blobs.items():
+			score=get_overlap2(box, blob.bounding_box)
+			if score<0.4:
+				continue
+			if classes[i]!=blob.type:
+				score=score/(1+confidences[i]*blob.type_confidence)
+			if score>0.4:
+				scores.append((score,i,_id))
+	scores.sort(reverse=True)
+	blobs_to_match={_id:True for _id in blobs}
+	boxes_to_match=[True]*len(boxes)
+	matches=[]
+	for _,i,_id in scores:
+		if boxes_to_match[i] and blobs_to_match[_id]:
+			matches.append((i,_id))
+			boxes_to_match[i]=False
+			blobs_to_match[_id]=False
+		else:
+			print ("already matched",i,_id)		
+	return matches
 
 def add_new_blobs(boxes, classes, confidences, blobs, frame, tracker, mcdf):
 	'''
 	Add new blobs or updates existing ones.
 	'''
-	matches=_match_boxes_simple(boxes,classes, confidences, blobs)
+	matches=_match_boxes_new(boxes,classes, confidences, blobs)
 	box2blob_matches={m[0]:m[1] for m in matches}
 	#box2blob_matches={m[1]:m[0] for m in matches} 
 	matched_blob_ids = set([m[1] for m in matches])

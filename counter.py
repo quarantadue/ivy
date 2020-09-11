@@ -3,8 +3,10 @@
 import time
 from util.logger import get_logger
 from util.bounding_box import get_centroid
+from progress import get_ProgressCounter
 
 logger = get_logger()
+progress=get_ProgressCounter()
 
 # I can count in two modes:
 # - static mode, uses only current frame, look if the bound box cross the counting line
@@ -147,12 +149,13 @@ def attempt_count(blob, blob_id, counting_lines, counts):
 		direction=counting_line.get('direction',None)
 		if direction in ['left','right','both']:
 			#dynamic mode
-			if blob.old_bounding_box is None:
+			if blob.old_bounding_box is None or blob.old_bounding_box==blob.bounding_box:
 				# blob is new, I can't measure movement
 				continue
 			bloblines=_get_dynamic_lines(blob.bounding_box,blob.old_bounding_box,counting_line.get('lookfor',None))
 		else:
 			bloblines=_get_static_lines(blob.bounding_box,counting_line.get('lookfor',None))
+			bloblines=None
 
 		if _has_crossed_counting_line(counting_line['line'],bloblines,direction):
 			if blob.type in counts[label]:
@@ -171,6 +174,8 @@ def attempt_count(blob, blob_id, counting_lines, counts):
 					'position_first_detected': blob.position_first_detected,
 					'position_counted': blob.centroid,
 					'counted_at':time.time(),
+					'counted_at_frame':progress.frame(),
 				},
 			})
+	blob.old_bounding_box=blob.bounding_box
 	return blob, counts
