@@ -8,6 +8,11 @@ from progress import get_ProgressCounter
 logger = get_logger()
 progress=get_ProgressCounter()
 
+# TODO:
+# change settings behavior
+# static and dinamic modes are determined from 'lookfor' and not from 'direction'
+# allow direction discrimination also in static mode using 'position_first_detected'
+
 # I can count in two modes:
 # - static mode, uses only current frame, look if the bound box cross the counting line
 # - dynamic mode, calculate movement vector using current and previous frame, can discriminate direction 
@@ -146,6 +151,15 @@ def attempt_count(blob, blob_id, counting_lines, counts):
 		label = counting_line['label']
 		if label in blob.lines_crossed:
 			continue
+		try:
+			mindist=counting_line['mindist']
+			c=blob.centroid
+			oc=blob.position_first_detected
+			dist2=(c[0]-oc[0])*(c[0]-oc[0])+(c[1]-oc[1])*(c[1]-oc[1])
+			if dist2<mindist*mindist:
+				continue
+		except KeyError as e:
+			pass
 		direction=counting_line.get('direction',None)
 		if direction in ['left','right','both']:
 			#dynamic mode

@@ -7,6 +7,7 @@ VCS entry point.
 import sys
 import time
 import cv2
+import numpy as np
 
 # the way parameters are loaded and parsed looks unnecessary complex
 # maybe I will mostly rewrite it if an when i will have the time and will to do it

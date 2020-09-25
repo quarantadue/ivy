@@ -209,7 +209,6 @@ except ValueError:
     print('Invalid value for HUD_COLOR. It should be a 3-tuple: (B, G, R).')
     ENVS_READY = False
 
-
 if not ENVS_READY:
     raise Exception('One or more environment variables are either invalid or not set. ' +
                     'Please ensure all variables are properly set.')
