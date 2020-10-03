@@ -16,6 +16,9 @@ import argparse
 parser = argparse.ArgumentParser(description='Count vehicles in videos')
 parser.add_argument('cfgfile', nargs='?',default='.env',help='configuration file')
 parser.add_argument('-v',default=None,help='video file, overrides what is set in config file',dest='video')
+parser.add_argument('-s',default=None,help='start at this timestamp, format HH:MM:SS',dest='start')
+parser.add_argument('-e',default=None,help='end at this timestamp, format HH:MM:SS',dest='end')
+
 args=parser.parse_args()
 from dotenv import load_dotenv
 load_dotenv(args.cfgfile)
@@ -32,8 +35,30 @@ init_logger()
 logger = get_logger()
 
 if args.video is not None:
-	settings.VIDEO=args.video	
+	settings.VIDEO=args.video
 
+# parse timestamp in format 'HH:MM:SS' and return total number of seconds	
+def parsets(ts):
+	hms=ts.split(":")
+	s=float(hms[-1])
+	if len(hms)>1:
+		s+=int(hms[-2])*60
+	if len(hms)>2:
+		s+=int(hms[-3])*3600
+	if len(hms)>3:
+		raise ValueError(ts)
+	return s
+	
+try:
+	if args.start is not None:
+		args.start=parsets(args.start)
+	if args.end is not None:
+		args.end=parsets(args.end)
+except ValueError as e:
+		print ("Invalid timestamp format")
+		print(e)
+		parser.print_help()
+		exit()
 
 def run():
 	'''
@@ -74,7 +99,22 @@ def run():
 										cv2.VideoWriter_fourcc(*'MJPG'), \
 										30, \
 										(f_width, f_height))
-
+	
+	fps=cap.get(cv2.CAP_PROP_FPS)
+	total_frames=round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+	if args.start is None:
+		starting_frame=0
+	else:
+		starting_frame=int(args.start*fps)
+		cap.set(cv2.CAP_PROP_POS_FRAMES,starting_frame)
+		print(starting_frame,cap.get(cv2.CAP_PROP_POS_FRAMES))
+	# last frame processed is the frame number ending_frame-1
+	# if starting_frame=0 and ending_frame=30 i will process 30 frames, from 0 to 29
+	if args.end is None:
+		ending_frame=total_frames
+	else:
+		ending_frame=min(int(args.end*fps),total_frames)
+	
 	logger.info('Processing started.', extra={
 		'meta': {
 			'label': 'START_PROCESS',
@@ -92,6 +132,11 @@ def run():
 				'droi': droi,
 				'counting_lines': counting_lines
 			},
+			'range':{
+				'start':starting_frame,
+				'end':ending_frame,
+				'total':total_frames,
+			}
 		},
 	})
 
@@ -104,12 +149,11 @@ def run():
 	is_paused = False
 	output_frame = None
 	progress=get_ProgressCounter()
-	progress.set_total_frames(round(cap.get(cv2.CAP_PROP_FRAME_COUNT)))
-	progress.set_fps(cap.get(cv2.CAP_PROP_FPS))
+	progress.config(total_frames=total_frames,frame_rate=fps,starting_frame=starting_frame,ending_frame=ending_frame)
 
 	try:
 		# main loop
-		while retval:
+		while retval and progress.remaining_frames()>0:
 			k = cv2.waitKey(1) & 0xFF
 			if k == ord('p'): # pause/play loop if 'p' key is pressed
 				is_paused = False if is_paused else True
@@ -142,7 +186,8 @@ def run():
 			logger.debug('Frame processed.', extra={
 				'meta': {
 					'label': 'FRAME_PROCESS',
-					'frames_processed': progress.frame(),
+					'next_frame': progress.frame(),
+					'frames_processed': progress.processed(),
 					'frame_rate': processing_frame_rate,
 					'frames_left': progress.remaining_frames(),
 					'percentage_processed': round(progress.progress() * 100, 2),
@@ -162,6 +207,7 @@ def run():
 				'label': 'END_PROCESS',
 				'counts': object_counter.get_counts(),
 				'completed': progress.progress() == 1,
+				'completed_p':round(progress.progress() * 100, 2),
 			},
 		})
 

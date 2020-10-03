@@ -169,8 +169,6 @@ def attempt_count(blob, blob_id, counting_lines, counts):
 			bloblines=_get_dynamic_lines(blob.bounding_box,blob.old_bounding_box,counting_line.get('lookfor',None))
 		else:
 			bloblines=_get_static_lines(blob.bounding_box,counting_line.get('lookfor',None))
-			bloblines=None
-
 		if _has_crossed_counting_line(counting_line['line'],bloblines,direction):
 			if blob.type in counts[label]:
 				counts[label][blob.type] += 1
