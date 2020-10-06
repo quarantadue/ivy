@@ -4,6 +4,7 @@ App settings.
 
 import os
 import ast
+from counter import test_lines
 
 
 ENVS_READY = True
@@ -108,7 +109,11 @@ if os.getenv('COUNTING_LINES'):
     except ValueError:
         print('Invalid value for COUNTING_LINES. It should be a list of lines.')
         ENVS_READY = False
-
+    err=test_lines(COUNTING_LINES)
+    if err is not None:
+    	print(err)
+    	ENVS_READY = False
+   
 # Configs for Haar Cascade detector
 if DETECTOR == 'haarcascade':
     if os.getenv('HAAR_CASCADE_PATH'):
