@@ -92,7 +92,12 @@ def _match_boxes_new(boxes,classes, confidences, blobs):
 			boxes_to_match[i]=False
 			blobs_to_match[_id]=False
 		else:
-			print ("already matched",i,_id)		
+			match_debug_log_meta = {
+				'label': 'match_debug',
+				'object_id': _id,
+				'index':i
+			}
+			logger.debug('Already matched.', extra={'meta': match_debug_log_meta})	
 	return matches
 
 def add_new_blobs(boxes, classes, confidences, blobs, frame, tracker, mcdf):
